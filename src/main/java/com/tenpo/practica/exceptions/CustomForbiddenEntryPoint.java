@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tenpo.practica.services.IActivityService;
 
 @Component
-public class CustomHttp403ForbiddenEntryPoint implements AuthenticationEntryPoint {
+public class CustomForbiddenEntryPoint implements AuthenticationEntryPoint {
 
 	
 	@Autowired

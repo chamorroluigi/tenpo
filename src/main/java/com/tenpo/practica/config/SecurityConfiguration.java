@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.tenpo.practica.exceptions.CustomAccessDeniedHandler;
-import com.tenpo.practica.exceptions.CustomHttp403ForbiddenEntryPoint;
+import com.tenpo.practica.exceptions.CustomForbiddenEntryPoint;
 
 @Configuration
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
@@ -27,7 +27,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	CustomAccessDeniedHandler authHandler;
 	
 	@Autowired
-	CustomHttp403ForbiddenEntryPoint httpForbiden;
+	CustomForbiddenEntryPoint httpForbiden;
 	
 	@Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {

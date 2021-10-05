@@ -1,7 +1,6 @@
 package com.tenpo.practica.services;
 
 import java.util.Date;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -46,18 +45,17 @@ public class ActivityServiceImpl implements IActivityService {
 		
 		ListaActividad listaAct = new ListaActividad(0,  list) ;
 				
-		if(list!=null && !list.isEmpty())
-			System.out.println("Lista vacia");
-		else {
-			
+		if(list!=null && list.getSize()>0)
+		{
 			listaAct.setLista(list);
 			listaAct.setTotal(list.getSize());
 		
 			System.out.println("Lista con datos");
 			
 			return listaAct;
+		} else {
+			return listaAct;
 		}
-		return listaAct;
 	}
 
 
@@ -75,7 +73,7 @@ public class ActivityServiceImpl implements IActivityService {
 		if(isLoged) {
 			act.setUsername(securityService.getUsername());
 		} else {
-			act.setUsername("Annonymus");
+			act.setUsername("Anonymous");
 		}	
 		
 		return activityRepository.save(act);

@@ -1,5 +1,6 @@
 package com.tenpo.practica.mvc;
 
+import com.tenpo.practica.config.Messages;
 import com.tenpo.practica.dto.ListaActividad;
 import com.tenpo.practica.dto.UserDto;
 import com.tenpo.practica.entity.Activity;
@@ -15,10 +16,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.AuthenticationException;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,6 +38,9 @@ public class RestTenpoController {
 	IUserService userService;
 
 	@Autowired
+	Messages messages;
+	
+	@Autowired
 	private ISecurityService securityService;
 	
 	
@@ -48,29 +52,29 @@ public class RestTenpoController {
 	public ResponseEntity<String> registerUserAccount(@Valid @RequestBody  UserDto accountDto) throws UserAlreadyExistException {
 
 		if (securityService.isAuthenticated()) {
-			return new ResponseEntity<String>("Primero debes desloguearte de sesion actual", HttpStatus.OK);
+			return new ResponseEntity<String>(messages.get("signup.firstlogout"), HttpStatus.OK);
 		}
 
 		Users usuario = userService.registerNewUserAccount(accountDto);
 
 		securityService.autoLogin(usuario.getName(), accountDto.getPassword());
 		
-		activityService.createActivityObject("register", "OK",
-				"Registro exitoso, ahora estas logueado", true);
+		activityService.createActivityObject("signup", "OK",
+				messages.get("signup.ok"), true);
 		
-		return new ResponseEntity<String>("Registrado exitosamente, ahora estas logueado", HttpStatus.OK);
+		return new ResponseEntity<String>(messages.get("signup.ok"), HttpStatus.OK);
 	}
 
 	@GetMapping("/find")
 	public ResponseEntity<String> findUserByName(@RequestParam("name") 
-	@NotNull(message ="Nombre no debe ser nulo") 
-	@NotBlank (message = "Nombre no debe estar vacio")
+	@NotNull(message ="{name.notNull}") 
+	@NotBlank (message = "{name.notBlank}")
 	String name) throws UserAlreadyExistException {
 
 		Users usuario = userService.findByName(name);
 		if (usuario != null) {
-			activityService.createActivityObject("find user", "Error",
-					"user ".concat(name).concat(" no encontrado"), true);
+			activityService.createActivityObject("find user", "OK",
+					"user ".concat(name).concat(" encontrado"), true);
 
 			return new ResponseEntity<String>("Usuario encontrado: "+usuario.getName(), HttpStatus.OK);
 		}
@@ -86,38 +90,35 @@ public class RestTenpoController {
 
 	@GetMapping("/login")
 	public ResponseEntity<String> login(@RequestParam("username") 
-		@NotBlank(message ="Username no debe estar vacio")
-		@NotNull(message ="Username no debe ser nulo")
+		@NotBlank(message ="{username.notBlank}")
+		@NotNull(message ="{username.notNull}")
 		String username, 
-		@NotBlank(message ="Password no debe estar vacia")
-		@NotNull(message ="Password no debe ser nula")
-		@RequestParam("password") @NotBlank String password) {
+		@NotBlank(message ="{password.notBlank}")
+		@NotNull(message ="{password.notNull}")
+		@RequestParam("password") String password) {
 
 		if (securityService.isAuthenticated()) {
-			activityService.createActivityObject("login", "ERROR", "Ya estaba logueado", true);
-			return new ResponseEntity<String>("Ya estas logueado", HttpStatus.OK);
+			activityService.createActivityObject("login", "ERROR", messages.get("login.alreadylogged"), true);
+			return new ResponseEntity<String>(messages.get("login.alreadylogged"), HttpStatus.OK);
 		}
 		
 		securityService.autoLogin(username, password);
 
 		activityService.createActivityObject("login", "OK", "login exitoso", true);
 		
-		return new ResponseEntity<String>("Logueado Exitosamente", HttpStatus.OK);
+		return new ResponseEntity<String>(messages.get("login.successfull"), HttpStatus.OK);
 
 	}
 
 
-	@GetMapping(value = "/sumar", params = { "numero1", "numero2" })
+	@GetMapping(value = "/sumar")
 	public ResponseEntity<String> sumar(@RequestParam("numero1")
-	@NotNull(message ="Numero1 no debe ser nulo")
+	@NotNull(message ="{numer1.notNull}")
 	Integer numero1, 
-	@NotNull(message ="Numero2 no debe ser nulo")
+	@NotNull(message ="{numer2.notNull}")
 	@RequestParam("numero2") Integer numero2) {
 
-		if (!securityService.isAuthenticated()) {
-			activityService.createActivityObject("sumar", "ERROR", "No esta logueado", true);
-			return new ResponseEntity<String>("No estas logueado", HttpStatus.OK);
-		}
+
 		long resultado = numero1+numero2;
 		
 		activityService.createActivityObject("suma", "OK", "suma exitosa", true);
@@ -136,13 +137,13 @@ public class RestTenpoController {
 		
 		SecurityContextHolder.getContext().setAuthentication(null);
 
-		return new ResponseEntity<String>("Estas deslogueado", HttpStatus.OK);
+		return new ResponseEntity<String>(messages.get("logout.ok"), HttpStatus.OK);
 
 	}
 	
 	
 	@GetMapping("/history")
-    public ResponseEntity<Page<Activity>> getAllEmployees(
+    public ResponseEntity<Page<Activity>> getAllActivities(
                         @RequestParam(defaultValue = "0") Integer pageNumber, 
                         @RequestParam(defaultValue = "10") Integer pageSize,
                         @RequestParam(defaultValue = "date") String sortBy) 
@@ -156,23 +157,5 @@ public class RestTenpoController {
         return new ResponseEntity<Page<Activity>>(lista.getLista(), HttpStatus.OK); 
     }
 	
-
-	@ExceptionHandler(value = UserAlreadyExistException.class)
-	public ResponseEntity<String> handleBlogAlreadyExistsException(UserAlreadyExistException blogAlreadyExistsException) {
-		activityService.createActivityObject("register", "ERROR", "Usuario ya existe", false);
-
-		return new ResponseEntity<String>("Usuario ya existe", HttpStatus.CONFLICT);
-	}
-	
-	
-		
-	
-	@ExceptionHandler(value = AuthenticationException.class)
-	public ResponseEntity<String> handleAuthenticationException(AuthenticationException blogAlreadyExistsException) {
-		
-		activityService.createActivityObject("login", "ERROR", "Usuario existente", false);
-		
-		return new ResponseEntity<String>("Usuario inexistente", HttpStatus.CONFLICT);
-	}
 	
 }
