@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+
+  my-postgres:
+    image: 'postgres:latest'
+    restart: always
+    volumes:
+      - './postgres_data:/var/lib/postgresql/data'
+    environment:
+      - POSTGRES_PASSWORD=secure_pass_here
+    ports:
+      - '5432:5432'
+
+  tenpo-webapp:
+    image: 'luigi26ar/tenpo-webapp:latest'
+    ports:
+      - '8082:8393'
+    environment:
+      - "SPRING_DATASOURCE_URL=jdbc:postgresql://my-postgres:5432/postgres"
+      
+networks:
+  truvideo-network:
